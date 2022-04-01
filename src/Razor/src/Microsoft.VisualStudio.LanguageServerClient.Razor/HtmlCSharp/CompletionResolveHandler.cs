@@ -115,17 +115,17 @@ namespace Microsoft.VisualStudio.LanguageServerClient.Razor.HtmlCSharp
             // then the "resolve" endpoint is guaranteed to run prior to a completion item's content being comitted. This gives language servers the
             // opportunity to lazily evaluate text edits which in turn we need to remap. Given text edits generated through this mechanism tend to be
             // more exntensive we do a full remapping gesture which includes formatting of said text-edits.
-            var shouldRemapTextEdits = preResolveCompletionItem.InsertText is null && preResolveCompletionItem.TextEdit is null;
+            var shouldRemapTextEdits = preResolveCompletionItem is VSInternalCompletionItem vsItem && vsItem.VsResolveTextEditOnCommit;
             if (shouldRemapTextEdits && resolvedCompletionItem.TextEdit != null)
             {
                 _logger.LogInformation("Start formatting text edit.");
 
                 var containsSnippet = resolvedCompletionItem.InsertTextFormat == InsertTextFormat.Snippet;
-                var remappedEdits = await _documentMappingProvider.RemapFormattedTextEditsAsync(
+                var remappedEdits = await _documentMappingProvider.RemapTextEditsAsync(
                     requestContext.ProjectedDocumentUri,
                     new[] { resolvedCompletionItem.TextEdit },
-                    formattingOptions,
-                    /*containsSnippet*/true,
+                    /*formattingOptions,
+                    containsSnippet,*/
                     cancellationToken).ConfigureAwait(false);
 
                 // We only passed in a single edit to be remapped
@@ -137,11 +137,11 @@ namespace Microsoft.VisualStudio.LanguageServerClient.Razor.HtmlCSharp
 
             if (resolvedCompletionItem.AdditionalTextEdits != null)
             {
-                var remappedEdits = await _documentMappingProvider.RemapFormattedTextEditsAsync(
+                var remappedEdits = await _documentMappingProvider.RemapTextEditsAsync(
                     requestContext.ProjectedDocumentUri,
                     resolvedCompletionItem.AdditionalTextEdits,
-                    formattingOptions,
-                    containsSnippet: true, // Additional text edits can't contain snippets
+                    /*formattingOptions,
+                    containsSnippet: false,*/ // Additional text edits can't contain snippets
                     cancellationToken).ConfigureAwait(false);
 
                 resolvedCompletionItem.AdditionalTextEdits = remappedEdits;
