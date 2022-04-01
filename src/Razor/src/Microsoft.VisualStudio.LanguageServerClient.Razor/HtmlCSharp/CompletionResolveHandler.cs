@@ -76,6 +76,8 @@ namespace Microsoft.VisualStudio.LanguageServerClient.Razor.HtmlCSharp
                 return request;
             }
 
+            _logger.LogInformation($"Preresolve {request.Label} with additional: {request.AdditionalTextEdits?.Any()}");
+
             var serverKind = requestContext.LanguageServerKind;
             var languageServerName = serverKind.ToLanguageServerName();
             var textBuffer = serverKind.GetTextBuffer(documentSnapshot);
@@ -91,6 +93,8 @@ namespace Microsoft.VisualStudio.LanguageServerClient.Razor.HtmlCSharp
                 return request;
             }
 
+            _logger.LogInformation($"Resolve {result.Label} with additional: {result.AdditionalTextEdits?.Any()}");
+
             _logger.LogInformation("Received result, post-processing.");
 
             var postProcessedResult = await PostProcessCompletionItemAsync(request, result, requestContext, documentSnapshot, cancellationToken).ConfigureAwait(false);
@@ -105,28 +109,23 @@ namespace Microsoft.VisualStudio.LanguageServerClient.Razor.HtmlCSharp
             LSPDocumentSnapshot documentSnapshot,
             CancellationToken cancellationToken)
         {
+            var formattingOptions = _formattingOptionsProvider.GetOptions(documentSnapshot);
+
             // This is a special contract between the Visual Studio LSP platform and language servers where if insert text and text edit's are not present
             // then the "resolve" endpoint is guaranteed to run prior to a completion item's content being comitted. This gives language servers the
             // opportunity to lazily evaluate text edits which in turn we need to remap. Given text edits generated through this mechanism tend to be
             // more exntensive we do a full remapping gesture which includes formatting of said text-edits.
             var shouldRemapTextEdits = preResolveCompletionItem.InsertText is null && preResolveCompletionItem.TextEdit is null;
-            if (!shouldRemapTextEdits)
+            if (shouldRemapTextEdits && resolvedCompletionItem.TextEdit != null)
             {
-                _logger.LogInformation("No TextEdit remap required.");
-                return resolvedCompletionItem;
-            }
+                _logger.LogInformation("Start formatting text edit.");
 
-            _logger.LogInformation("Start formatting text edit.");
-
-            var formattingOptions = _formattingOptionsProvider.GetOptions(documentSnapshot);
-            if (resolvedCompletionItem.TextEdit != null)
-            {
                 var containsSnippet = resolvedCompletionItem.InsertTextFormat == InsertTextFormat.Snippet;
                 var remappedEdits = await _documentMappingProvider.RemapFormattedTextEditsAsync(
                     requestContext.ProjectedDocumentUri,
                     new[] { resolvedCompletionItem.TextEdit },
                     formattingOptions,
-                    containsSnippet,
+                    /*containsSnippet*/true,
                     cancellationToken).ConfigureAwait(false);
 
                 // We only passed in a single edit to be remapped
@@ -142,7 +141,7 @@ namespace Microsoft.VisualStudio.LanguageServerClient.Razor.HtmlCSharp
                     requestContext.ProjectedDocumentUri,
                     resolvedCompletionItem.AdditionalTextEdits,
                     formattingOptions,
-                    containsSnippet: false, // Additional text edits can't contain snippets
+                    containsSnippet: true, // Additional text edits can't contain snippets
                     cancellationToken).ConfigureAwait(false);
 
                 resolvedCompletionItem.AdditionalTextEdits = remappedEdits;
