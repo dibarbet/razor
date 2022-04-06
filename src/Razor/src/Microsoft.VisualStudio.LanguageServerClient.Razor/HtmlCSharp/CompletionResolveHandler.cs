@@ -121,11 +121,11 @@ namespace Microsoft.VisualStudio.LanguageServerClient.Razor.HtmlCSharp
                 _logger.LogInformation("Start formatting text edit.");
 
                 var containsSnippet = resolvedCompletionItem.InsertTextFormat == InsertTextFormat.Snippet;
-                var remappedEdits = await _documentMappingProvider.RemapTextEditsAsync(
+                var remappedEdits = await _documentMappingProvider.RemapFormattedTextEditsAsync(
                     requestContext.ProjectedDocumentUri,
                     new[] { resolvedCompletionItem.TextEdit },
-                    /*formattingOptions,
-                    containsSnippet,*/
+                    formattingOptions,
+                    containsSnippet,
                     cancellationToken).ConfigureAwait(false);
 
                 // We only passed in a single edit to be remapped
@@ -137,11 +137,11 @@ namespace Microsoft.VisualStudio.LanguageServerClient.Razor.HtmlCSharp
 
             if (resolvedCompletionItem.AdditionalTextEdits != null)
             {
-                var remappedEdits = await _documentMappingProvider.RemapTextEditsAsync(
+                var remappedEdits = await _documentMappingProvider.RemapFormattedTextEditsAsync(
                     requestContext.ProjectedDocumentUri,
                     resolvedCompletionItem.AdditionalTextEdits,
-                    /*formattingOptions,
-                    containsSnippet: false,*/ // Additional text edits can't contain snippets
+                    formattingOptions,
+                    containsSnippet: false, // Additional text edits can't contain snippets
                     cancellationToken).ConfigureAwait(false);
 
                 resolvedCompletionItem.AdditionalTextEdits = remappedEdits;

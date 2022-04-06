@@ -10,5 +10,12 @@ namespace Microsoft.AspNetCore.Razor.LanguageServer
         Default,
         FormatOnType,
         Snippet,
+        /*
+         TODO Rename format on type to something else
+         Add new one which is format non whitespace changes.
+         This should bypass validation.
+
+         Also debug weird cancellaiton when override completion with extra whitespace on the line before
+         */
     }
 }

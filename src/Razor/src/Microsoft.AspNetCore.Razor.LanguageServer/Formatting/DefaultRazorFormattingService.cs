@@ -68,7 +68,7 @@ namespace Microsoft.AspNetCore.Razor.LanguageServer.Formatting
         }
 
         public override Task<TextEdit[]> FormatOnTypeAsync(DocumentUri uri, DocumentSnapshot documentSnapshot, RazorLanguageKind kind, TextEdit[] formattedEdits, FormattingOptions options, int hostDocumentIndex, char triggerCharacter, CancellationToken cancellationToken)
-            => ApplyFormattedEditsAsync(uri, documentSnapshot, kind, formattedEdits, options, hostDocumentIndex, triggerCharacter, bypassValidationPasses: false, collapseEdits: false, automaticallyAddUsings: false, cancellationToken: cancellationToken);
+            => ApplyFormattedEditsAsync(uri, documentSnapshot, kind, formattedEdits, options, hostDocumentIndex, triggerCharacter, bypassValidationPasses: true, collapseEdits: false, automaticallyAddUsings: false, cancellationToken: cancellationToken);
 
         public override Task<TextEdit[]> FormatCodeActionAsync(DocumentUri uri, DocumentSnapshot documentSnapshot, RazorLanguageKind kind, TextEdit[] formattedEdits, FormattingOptions options, CancellationToken cancellationToken)
             => ApplyFormattedEditsAsync(uri, documentSnapshot, kind, formattedEdits, options, hostDocumentIndex: 0, triggerCharacter: '\0', bypassValidationPasses: true, collapseEdits: false, automaticallyAddUsings: true, cancellationToken: cancellationToken);
@@ -125,7 +125,11 @@ namespace Microsoft.AspNetCore.Razor.LanguageServer.Formatting
                 return Array.Empty<TextEdit>();
             }
 
-            return edits;
+            // TODO - combine with textChanges and changedText above and do if any text changes.
+            var minimalChanges = SourceTextDiffer.GetMinimalTextChanges(originalText, changedText, lineDiffOnly: false);
+            var finalEdits = minimalChanges.Select(f => f.AsTextEdit(originalText)).ToArray();
+
+            return finalEdits;
         }
 
         // Internal for testing

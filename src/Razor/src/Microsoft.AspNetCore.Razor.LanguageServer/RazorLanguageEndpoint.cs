@@ -196,7 +196,7 @@ namespace Microsoft.AspNetCore.Razor.LanguageServer
 
             if (request.TextEditKind == TextEditKind.FormatOnType)
             {
-                var mappedEdits = await _razorFormattingService.FormatOnTypeAsync(request.RazorDocumentUri, documentSnapshot, request.Kind, request.ProjectedTextEdits, request.FormattingOptions, hostDocumentIndex: 0, triggerCharacter: '\0', cancellationToken);
+                var mappedEdits = await _razorFormattingService.FormatOnTypeAsync(request.RazorDocumentUri, documentSnapshot, request.Kind, request.ProjectedTextEdits, request.FormattingOptions, hostDocumentIndex: 0, triggerCharacter: '\0', CancellationToken.None);
 
                 return new RazorMapToDocumentEditsResponse()
                 {
@@ -211,7 +211,7 @@ namespace Microsoft.AspNetCore.Razor.LanguageServer
                     WrapCSharpSnippets(request.ProjectedTextEdits);
                 }
 
-                var mappedEdits = await _razorFormattingService.FormatSnippetAsync(request.RazorDocumentUri, documentSnapshot, request.Kind, request.ProjectedTextEdits, request.FormattingOptions, cancellationToken);
+                var mappedEdits = await _razorFormattingService.FormatSnippetAsync(request.RazorDocumentUri, documentSnapshot, request.Kind, request.ProjectedTextEdits, request.FormattingOptions, CancellationToken.None);  
 
                 if (request.Kind == RazorLanguageKind.CSharp)
                 {
